@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helmet Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-6">
+
+    <div class="w-full max-w-2xl bg-gray-800 rounded-lg shadow-lg p-8 text-center">
+        
+        <!-- Main Heading -->
+        <h1 class="text-4xl font-bold text-indigo-400 mb-6">Helmet Detection System</h1>
+        <p class="text-gray-300 text-lg mb-4">Upload an image to detect helmets using AI.</p>
+
+        <!-- Upload Section (Initially Visible) -->
+        <div id="uploadSection">
+            <!-- Drag & Drop File Upload (Hidden after selection) -->
+            <label for="dropzone-file" id="dropzone-label"
+                class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-500 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 transition-all shadow-md">
+                <div id="dropzone-content" class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <i class="fa-solid fa-upload text-6xl text-gray-300 mb-3 opacity-80 hover:opacity-100 transition-all"></i>
+                    <p class="mb-2 text-lg font-semibold text-gray-300">Click to upload or drag & drop</p>
+                    <p class="text-sm text-gray-400">Supported: JPG, PNG, GIF</p>
+                </div>
+                <input id="dropzone-file" type="file" class="hidden" accept="image/*" onchange="previewImage()" />
+            </label>
+
+            <!-- Image Preview (Hidden Initially) -->
+            <div id="imagePreview" class="hidden">
+                <img id="previewImage" src="#" alt="Preview" class="w-full max-h-96 object-contain border-2 border-gray-700 rounded-lg mb-4">
+                <button onclick="uploadImage()" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                    Detect Helmet
+                </button>
+                <button onclick="cancelUpload()" 
+                    class="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Loader (Hidden Initially) -->
+        <div id="loader" class="hidden flex justify-center items-center mt-6">
+            <div class="w-10 h-10 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+        </div>
+
+        <!-- Results Section (Hidden Initially) -->
+        <div id="resultsSection" class="hidden">
+            <!-- Processed Image -->
+            <div id="imageContainer" class="mt-6">
+                <h2 class="text-xl font-semibold text-indigo-400 mb-4">Detection Results</h2>
+                <img id="outputImage" src="" alt="Processed Image" class="w-full max-h-96 object-contain border-2 border-gray-700 rounded-lg">
+            </div>
+
+            <!-- Cropped Image for Users Without Helmets -->
+            <div id="croppedImageContainer" class="hidden mt-6">
+                <h2 class="text-xl font-semibold text-red-400 mb-4">Violation Detected (No Helmet)</h2>
+                <img id="croppedImage" src="" alt="Cropped Image" class="w-full max-h-96 object-contain border-2 border-red-700 rounded-lg">
+            </div>
+
+            <!-- New Upload Button -->
+            <button onclick="resetUpload()" 
+                class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                <i class="fas fa-upload mr-2"></i> New Upload
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function previewImage() {
+            const fileInput = document.getElementById('dropzone-file');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Hide upload section, show preview
+                    document.getElementById('dropzone-label').classList.add('hidden');
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    document.getElementById('previewImage').src = e.target.result;
+                }
+                
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function cancelUpload() {
+            // Reset file input
+            document.getElementById('dropzone-file').value = '';
+            // Hide preview, show upload section again
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('dropzone-label').classList.remove('hidden');
+        }
+
+        function uploadImage() {
+            let input = document.getElementById('dropzone-file').files[0];
+            if (!input) {
+                alert("Please select an image!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("image", input);
+
+            // Show loader while processing
+            document.getElementById("uploadSection").classList.add("hidden");
+            document.getElementById("loader").classList.remove("hidden");
+
+            fetch("http://127.0.0.1:5002/detect", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())  
+            .then(data => {
+                document.getElementById("loader").classList.add("hidden");
+                document.getElementById("resultsSection").classList.remove("hidden");
+
+                if (data.processed_image_url) {
+                    document.getElementById("outputImage").src = data.processed_image_url;
+                }
+
+                if (data.cropped_image_url) {
+                    document.getElementById("croppedImage").src = data.cropped_image_url;
+                    document.getElementById("croppedImageContainer").classList.remove("hidden"); 
+                }
+
+                if (!data.processed_image_url && !data.cropped_image_url) {
+                    alert("Error processing image!");
+                    resetUpload();
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById("loader").classList.add("hidden");
+                resetUpload();
+            });
+        }
+
+        function resetUpload() {
+            // Reset all elements
+            document.getElementById('dropzone-file').value = '';
+            document.getElementById("resultsSection").classList.add("hidden");
+            document.getElementById("croppedImageContainer").classList.add("hidden");
+            document.getElementById("uploadSection").classList.remove("hidden");
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('dropzone-label').classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>

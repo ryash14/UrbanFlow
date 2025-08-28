@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Violation Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a1b1f 0%, #2a2e35 100%);
+        }
+        .card-glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+        .dropzone-glow {
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+        }
+        .dropzone-glow:hover {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+        .violation-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="gradient-bg text-white min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl bg-gray-800/80 backdrop-blur-sm rounded-xl overflow-hidden card-glow border border-gray-700">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-center">
+            <h1 class="text-3xl font-bold text-white">
+                <i class="fas fa-mobile-alt mr-2"></i> Phone Violation Detector
+            </h1>
+            <p class="text-indigo-100 mt-2">Upload traffic images to detect phone usage violations</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="p-6 md:p-8">
+            <!-- Upload Section -->
+            <form action="/upload" method="post" enctype="multipart/form-data" class="mb-8">
+                <div class="space-y-6">
+                    <label for="imageInput" class="block">
+                        <div class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer bg-gray-800/50 hover:bg-gray-800/70 transition-all duration-300 dropzone-glow p-6">
+                            <div class="text-center">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-indigo-400 mb-3"></i>
+                                <p class="text-gray-300 font-medium">Click to upload or drag & drop</p>
+                                <p class="text-gray-500 text-sm mt-1">JPG, PNG (Max 5MB)</p>
+                            </div>
+                            <input id="imageInput" type="file" name="image" class="hidden" accept="image/*" required>
+                        </div>
+                    </label>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 btn-glow">
+                        <i class="fas fa-search mr-2"></i> Detect Violations
+                    </button>
+                </div>
+            </form>
+
+            <!-- Results Section -->
+            <div class="space-y-8">
+                {% if uploaded_image %}
+                <div class="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-300 mb-4 flex items-center">
+                        <i class="fas fa-image text-indigo-400 mr-2"></i> Original Image
+                    </h2>
+                    <div class="flex justify-center">
+                        <img src="{{ uploaded_image }}" alt="Uploaded Image" class="max-w-full h-auto rounded-lg shadow-md max-h-80">
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if result_image %}
+                <div class="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
+                    <h2 class="text-xl font-semibold text-gray-300 mb-4 flex items-center">
+                        <i class="fas fa-eye text-indigo-400 mr-2"></i> Processed Image
+                    </h2>
+                    <div class="flex justify-center">
+                        <img src="{{ result_image }}" alt="Processed Image" class="max-w-full h-auto rounded-lg shadow-md max-h-80">
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if violation_text %}
+                <div class="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-300 mb-1">Detection Result</h2>
+                            <p class="text-gray-400">Analysis completed</p>
+                        </div>
+                        <div class="violation-badge bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 py-2 rounded-full font-bold flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            {{ violation_text }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if uploaded_image %}
+            <div class="mt-8 text-center">
+                <a href="/" class="inline-block bg-gray-700 hover:bg-gray-600 text-gray-300 py-2 px-6 rounded-lg transition-all">
+                    <i class="fas fa-redo mr-2"></i> Analyze Another Image
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-900/50 p-4 text-center text-gray-500 text-sm">
+            <p>Phone Violation Detection System © 2023</p>
+        </div>
+    </div>
+
+    <script>
+        // Enhance file input display
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file selected';
+            const label = document.querySelector('label[for="imageInput"] p:first-child');
+            if (label) {
+                label.textContent = fileName;
+                label.classList.add('text-indigo-400');
+                label.classList.remove('text-gray-300');
+            }
+        });
+    </script>
+</body>
+</html>
