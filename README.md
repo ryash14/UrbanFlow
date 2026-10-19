@@ -4,7 +4,23 @@ UrbanFlow collects traffic-safety vision experiments, model notebooks and task-s
 
 Different traffic tasks need different models and input assumptions. UrbanFlow keeps accident classification, helmet detection, number-plate work and other experiments in separate services, making the training-to-inference path visible without pretending they form one finished platform.
 
-[Quick start](#quick-start) · [How it works](#how-it-works) · [Development](#development) · [Contributing](CONTRIBUTING.md)
+[Preview](#application-preview) · [Quick start](#quick-start) · [Architecture](#architecture-and-request-flow) · [Development](#development) · [Contributing](CONTRIBUTING.md)
+
+## Application preview
+
+![UrbanFlow traffic report dashboard](docs/screenshots/traffic-report-view.png)
+
+Archived reporting interface with sample dashboard figures. These displayed numbers are not operational or model-performance metrics.
+
+[Screenshot notes](docs/screenshots/README.md)
+
+## Capabilities
+
+| Workflow | Result |
+|---|---|
+| Choose a vision task | Run a dedicated accident, helmet or other task service. |
+| Inspect inference | View labels, bounding boxes and generated image artifacts. |
+| Trace the experiment | Follow task notebooks, model files and service entrypoints separately. |
 
 ## Quick start
 
@@ -37,14 +53,14 @@ The example starts only the accident classifier and requires its compatible `acc
 
 Run one component at a time until its model files, dependencies and output contract are verified. The services may use different ports and working-directory assumptions.
 
-## How it works
+## Architecture and request flow
 
 1. Choose a task directory and obtain its compatible model weights.
 2. Start that task’s Flask service with its dependencies.
 3. Upload a test image through the associated page or endpoint.
 4. Inspect the classification, detection boxes or generated image artifacts. Traffic simulations are separate scripts.
 
-### Component boundaries
+### Component model
 
 ```mermaid
 flowchart TB
@@ -59,7 +75,7 @@ flowchart TB
     Notebooks -.-> Helmet
 ```
 
-### Design decisions
+### Engineering decisions
 
 The accident service reconstructs a ResNet18 classifier and loads a PyTorch state dictionary. Helmet detection uses an Ultralytics YOLO model and writes annotated/cropped images. Other task directories have their own entrypoints and assets.
 
